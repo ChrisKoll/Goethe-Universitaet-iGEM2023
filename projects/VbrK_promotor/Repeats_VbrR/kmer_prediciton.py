@@ -1,5 +1,8 @@
 import numpy as np
+import logomaker
+import seaborn as sns
 import matplotlib.pyplot as plt
+from graph_algorithms import *
 
 WINDOWSIZE = 6  # as described in paper
 
@@ -14,48 +17,26 @@ def hamming_dist(x, y):
                 res += 1
         return res
 
+def count_occ(kmers_dict, kmers):
+    occs = list()
+    for kmer in kmers:
+        occs.extend(kmers_dict[kmer])
+    return check_occs(occs)
 
-def bottelneck(G, w):
-    new_G = G
-    new_G[new_G > w] = 0
-    return new_G
+def check_occs(occs:list):
+    duplicates = set()
+    for i in range(len(occs)-1):
+        for j in range(1, len(occs)):
+            if occs[i][1] > occs[j][0] > occs[i][0] or occs[j][1] > occs[i][0] > occs[j][0]:
+                duplicates.add(i)
+                duplicates.add(j)
 
+    dups_sorted = sorted(duplicates, reverse=True)
+    for i in dups_sorted:
+        occs.pop(i)
 
-def MIS(G):
-    I = set()
-    V = set(np.arange(0, G.shape[0], 1))
-    deg = np.sum(G > 0, axis=0)
-    idx = np.arange(0, G.shape[0], 1)
-    while len(V) > 0:
-        v = int(np.argmin(deg))
-        if v in V:
-            deg[v] = 10000
-        else:
-            break
-        I.add(v)
-        V.remove(v)
-        N = idx[G[v, :] > 0]
-        for n in N:
-            V.remove(n)
+    return occs
 
-    return I
-
-
-def min_max_k_clustering(G, w, k):
-    i = 0
-    cont = True
-    I = set()
-
-    while cont:
-        i = i + 1
-        Gb = bottelneck(G, w[i])
-        I = MIS(Gb)
-        if I <= k:
-            cont = False
-
-    return I
-
-# counting kmers using Hash table
 kmers = dict()
 with open("PromoterOnly.fasta", "r") as file:
     file.readline()
@@ -63,29 +44,55 @@ with open("PromoterOnly.fasta", "r") as file:
 
     for i in range(len(sequence) - WINDOWSIZE):
         try:
-            kmers[sequence[i:i + WINDOWSIZE]] += 1
+            kmers[sequence[i:i + WINDOWSIZE]].append((i, i + WINDOWSIZE))
         except KeyError:
-            kmers[sequence[i:i + WINDOWSIZE]] = 1
+            kmers[sequence[i:i + WINDOWSIZE]] = [(i, i + WINDOWSIZE)]
 
-# Calculate distance matrix / network
+######################
+# Cliquen Clustering #
+######################
+
 dist = np.zeros((len(kmers.keys()), len(kmers.keys())))
 kmers_list = list()
 for i, key_i in enumerate(kmers.keys()):
     kmers_list.append(key_i)
     for j, key_j in enumerate(kmers.keys()):
         dist[i, j] = hamming_dist(key_i, key_j)
-        
 
-# Plot results
 dist = (dist + 1) * (1 - np.eye(dist.shape[0]))
-kmers_list = np.array(kmers_list)
-maxindset = np.array(list(MIS(bottelneck(dist, 2))))
-print(kmers_list[maxindset])
+sns.clustermap(dist)
+plt.show()
 
-kmers_sorted = dict(sorted(kmers.items(), key=lambda item: item[1], reverse=True))
-print(kmers_sorted)
+max_3_graph = bottelneck(dist, 2)
+sns.clustermap(max_3_graph)
+plt.show()
+
+clusters = minimum_clique_partitioning(max_3_graph)
+kmers_list = np.array(kmers_list)
+
+cluster_counts = dict()
+for i in range(len(clusters)):
+    c_kmers = kmers_list[np.array(list(clusters[i])).astype(int)]
+    counts = count_occ(kmers, c_kmers)
+    cluster_counts["+".join(c_kmers)] = len(counts)
+
+#################
+# Visualization #
+#################
+
+# Plot kmers (unique)
+kmers_sorted = dict(sorted(kmers.items(), key=lambda item: len(item), reverse=True))
 keys = list(kmers_sorted.keys())
-values = list(kmers_sorted.values())
+values = [len(occ) for occ in list(kmers_sorted.values())]
+plt.bar(keys[0:14], values[0:14], width=0.75)
+plt.xticks(rotation=45, ha='right')
+plt.tight_layout()
+plt.show()
+
+# Plot clusters
+clusters_counts = dict(sorted(cluster_counts.items(), key=lambda item: item[1], reverse=True))
+keys = list(clusters_counts.keys())
+values = list(clusters_counts.values())
 plt.bar(keys[0:14], values[0:14], width=0.75)
 plt.xticks(rotation=45, ha='right')
 plt.tight_layout()
