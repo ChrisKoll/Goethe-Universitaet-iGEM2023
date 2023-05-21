@@ -197,7 +197,7 @@ def read_fasta(path):
     return new_sequences
 
 def align_local(seq1, seq2):
-    output = 100
+    output = 1000
     match = 5
     mismatch = -3
     gap = -3
