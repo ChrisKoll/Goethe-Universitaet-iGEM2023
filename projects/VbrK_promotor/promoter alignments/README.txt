@@ -1,5 +1,6 @@
 ## localalign
 Programm getestet mit Python 3.11
+
 Ausführen über konsole mit
 localalign.py promoter.fasta binding_site.fasta
 
@@ -10,6 +11,7 @@ Standard Cluster Einstellung ist Toleranz von 20 bp auf jeder Seite
 
 ## binding
 Programm getestet mit Python 3.11
+
 Ausführen über konsole mit
 binding.py promoter.fasta
 
