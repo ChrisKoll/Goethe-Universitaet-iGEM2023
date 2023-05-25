@@ -97,7 +97,7 @@ class Sequence:
         self.genename = re.findall("\[gene=[^\s]*", header)
         self.alphabet = self.identifyAlphabet()
         self.frequencies = self.identifyFrequencies()
-
+    
     def identifyAlphabet(self):
         """returns if the fasta file describes a gene or protein"""
         for i in self.seq:

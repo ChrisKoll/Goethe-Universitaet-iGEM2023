@@ -101,7 +101,7 @@ def seq_search(sequence, gap_min, gap_max, s1, s2, allowed_mismatch):
             subject = sequence[i:i+len(query)]
             mismatch = mismatches(subject, query)
             if mismatch <= allowed_mismatch:
-                return_seqs.append((subject, query, i))
+                return_seqs.append((subject, query, i, mismatch))
     
     return return_seqs
 
@@ -117,9 +117,10 @@ def main():
     s2 = "TTCATCG"
     #amount of gaps between s1 and s2
     min_gap = 1
-    max_gap = 4
+    max_gap = 6
+
     #allowed mismatches of s1+s2 from sequence excluding gaps
-    allowed_mismatch = 6
+    allowed_mismatch = 5
     
     #search matches
     seqs = seq_search(seq.seq, min_gap, max_gap, s1, s2, allowed_mismatch)
@@ -127,7 +128,7 @@ def main():
     #output
     print("Found matches " + str(len(seqs)) + " of " + s1 + " and " + s2 + ":")
     for i in seqs:
-        print("Index:" + str(i[2]) + "," + str(i[2] + len(i[1])))
+        print("Index:" + str(i[2]) + "," + str(i[2] + len(i[1])) + " Mismatch: " + str(i[3]))
         print(i[0])
         print(i[1])
         print()
